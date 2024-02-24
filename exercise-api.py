@@ -35,7 +35,7 @@ def main():
     
     # Use ThreadPoolExecutor to send requests in parallel
     with ThreadPoolExecutor(max_workers=args.workers) as executor:
-        # Mathpix tracing test!  of diversifying request types
+        # tracing test!  of diversifying request types
         future_to_request = {executor.submit(send_request, args.url, "GET", i=i): i for i in range(args.requests // 2)}
         future_to_request.update({executor.submit(send_request, args.url, "POST", payload=payloads[i % len(payloads)], i=i+args.requests // 2): i for i in range(args.requests // 2)})
 

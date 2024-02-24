@@ -15,7 +15,7 @@ COPY . .
 
 # Expose port 3000 to the outside once the container has launched
 EXPOSE 3000
-
+EXPOSE 6831
 # Define the command to run the app (use the command that starts your app)
 CMD ["node", "server.js"]
 

@@ -87,7 +87,7 @@ services:
     image: docker.elastic.co/beats/filebeat:8.12.1
     user: root
     volumes:
-      - ./metrics/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+    # - ./metrics/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - filebeat-data:/usr/share/filebeat/data:rw

@@ -2,6 +2,7 @@ import json
 import pika
 import requests
 import time
+import logging
 from jaeger_client import Config
 from opentracing_instrumentation.request_context import get_current_span, span_in_context
 
