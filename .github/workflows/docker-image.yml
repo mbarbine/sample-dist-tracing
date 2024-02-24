@@ -1,0 +1,18 @@
+name: nodeJS-API Docker Image
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build the nodejs-api image
+      run:  docker buildx build node-app/. -t nodejs-api 

@@ -1,0 +1,15 @@
+{
+  "name": "nodejs-api",
+  "version": "1.0.0",
+  "description": "A Node.js API with Jaeger Tracing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "amqplib": "^0.10.3",
+    "express": "^4.17.1",
+    "jaeger-client": "^3.18.1",
+    "opentracing": "^0.14.4"
+  }
+}

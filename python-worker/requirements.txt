@@ -1,0 +1,8 @@
+requests             # For making HTTP requests
+jaeger-client        # For Jaeger tracing integration
+Pillow==8.2.0                # For image processing tasks
+beautifulsoup4==4.9.3        # For web scraping
+opencv-python==4.5.1.48      # For more advanced image processing and computer vision tasks
+pika
+opentracing_instrumentation
+

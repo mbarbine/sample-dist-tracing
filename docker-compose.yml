@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.2
+    environment:
+      - discovery.type=single-node
+      # Example environment variables for hypothetical advanced configurations
+      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # - "xpack.security.enabled=true"
+    volumes:
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.17.2
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.12.1
+    command: logstash -f /usr/share/logstash/pipeline/logstash.conf
+    volumes:
+      - ./logstash:/usr/share/logstash/pipeline
+    ports:
+      - "5001:5001"
+    depends_on:
+      - elasticsearch
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.54
+    ports:
+      - "16686:16686"
+      - "5775:5775/udp"
+      - "6831:6831/udp"
+      - "6832:6832/udp"
+      - "5778:5778"
+
+  node-app:
+    image: nodejs-api:latest
+    environment:
+      - JAEGER_SERVICE_NAME=node-app
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+    ports:
+      - "3000:3000"
+    depends_on:
+      - rabbitmq
+      - jaeger
+
+  python-worker:
+    build:
+      context: ./python-worker
+      dockerfile: Dockerfile
+    environment:
+      - JAEGER_SERVICE_NAME=python-worker
+      - JAEGER_AGENT_HOST=jaeger
+      - JAEGER_AGENT_PORT=6831
+      - RABBITMQ_HOST=rabbitmq
+      - RABBITMQ_PORT=5672
+      - RABBITMQ_USER=user
+      - RABBITMQ_PASS=password
+    depends_on:
+      - rabbitmq
+      - jaeger
+      - node-app
+    healthcheck:
+      test: ["CMD-SHELL", "exit 0"]
+    restart: "on-failure"
+    entrypoint: /bin/sh -c "sleep 10 && python ./worker.py"
+
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:8.12.1
+    user: root
+    volumes:
+      - ./metrics/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - filebeat-data:/usr/share/filebeat/data:rw
+    command: filebeat -e --strict.perms=false -E output.elasticsearch.hosts=["elasticsearch:9200"]
+    depends_on:
+      - elasticsearch
+
+  metricbeat:
+    image: docker.elastic.co/beats/metricbeat:8.12.1
+    user: root
+    volumes:
+      - ./metrics/metricbeat.docker.yml:/usr/share/metricbeat/metricbeat.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /proc:/hostfs/proc:ro
+      - /sys/fs/cgroup:/hostfs/sys/fs/cgroup:ro
+      - /:/hostfs:ro
+    command: metricbeat -e --strict.perms=false -system.hostfs=/hostfs
+    depends_on:
+      - elasticsearch
+      - kibana
+
+volumes:
+  rabbitmq-data:
+  elasticsearch-data:
+  metricbeat-data:
+  filebeat-data:
+
+networks:
+  elastic:
+    driver: bridge
