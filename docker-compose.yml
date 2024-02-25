@@ -11,6 +11,8 @@ services:
       - elasticsearch-data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
+    networks:
+      - elastic
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.12.1
@@ -21,6 +23,8 @@ services:
       - elasticsearch
     ports:
       - "5601:5601"
+    networks:
+      - elastic
 
   logstash:
     image: docker.elastic.co/logstash/logstash:8.12.1
@@ -34,6 +38,8 @@ services:
       - "5001:5001"
     depends_on:
       - elasticsearch
+    networks:
+      - elastic
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -45,15 +51,19 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq-data:/var/lib/rabbitmq
+    networks:
+      - elastic
 
   jaeger:
-    image: jaegertracing/all-in-one:1.54
+    image: jaegertracing/all-in-one:latest
     ports:
       - "16686:16686"
       - "5775:5775/udp"
       - "6831:6831/udp"
       - "6832:6832/udp"
       - "5778:5778"
+    networks:
+      - elastic
 
   node-app:
     image: nodejs-api:latest
@@ -66,11 +76,11 @@ services:
     depends_on:
       - rabbitmq
       - jaeger
+    networks:
+      - elastic
 
   python-worker:
-    build:
-      context: ./python-worker
-      dockerfile: Dockerfile
+    image: python-worker:latest
     environment:
       - JAEGER_SERVICE_NAME=python-worker
       - JAEGER_AGENT_HOST=jaeger
@@ -83,22 +93,21 @@ services:
       - rabbitmq
       - jaeger
       - node-app
-    healthcheck:
-      test: ["CMD-SHELL", "exit 0"]
-    restart: "on-failure"
-    entrypoint: /bin/sh -c "sleep 10 && python ./worker.py"
+    networks:
+      - elastic
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:8.12.1
     user: root
     volumes:
-    # - ./metrics/filebeat.docker.yml:/usr/share/filebeat/filebeat.yml:ro
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - filebeat-data:/usr/share/filebeat/data:rw
     command: filebeat -e --strict.perms=false -E output.elasticsearch.hosts=["elasticsearch:9200"]
     depends_on:
       - elasticsearch
+    networks:
+      - elastic
 
   metricbeat:
     image: docker.elastic.co/beats/metricbeat:8.12.1
@@ -113,11 +122,12 @@ services:
     depends_on:
       - elasticsearch
       - kibana
+    networks:
+      - elastic
+
   netdata:
     image: netdata/netdata:stable
     container_name: netdata
-    pid: host
-    network_mode: host
     restart: unless-stopped
     cap_add:
       - SYS_PTRACE
@@ -140,6 +150,8 @@ services:
       - NETDATA_CLAIM_TOKEN=yn8kroQrj0GenJA7YK_qTtES6CEewkwdr7xA76B7zoK6LRb8a9FrKtHsRr6fhHowHXfflQFWcmESNZb3NMLpY4BRh_OcoAaoldXZ_rvVHzPOEd_8wKeOIce8naGsxpVEqgBuDSw
       - NETDATA_CLAIM_URL=https://app.netdata.cloud
       - NETDATA_CLAIM_ROOMS=5d892dcf-7e43-4586-8dd0-efbc1f4c95bd
+    networks:
+      - elastic
 
 volumes:
   rabbitmq-data:
@@ -153,4 +165,3 @@ volumes:
 networks:
   elastic:
     driver: bridge
-

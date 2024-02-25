@@ -1,40 +1,34 @@
-# Use the official Node.js 14 as a parent image
-FROM node:14
+# Use the official Node.js 18 as a parent image
+FROM node:latest
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
 
+# Install necessary build tools and dependencies
+RUN apt-get update && apt-get install -y build-essential
+
 # Copy package.json and package-lock.json (if available) into the container
 COPY package*.json ./
 
-# Install any dependencies
+# Clean up npm cache and rebuild
+RUN npm cache clean --force
+
+# Install npm globally to ensure the latest version is available
+RUN npm install -g npm@latest
+
+# Install project dependencies
 RUN npm install
 
 # Bundle the application source inside the Docker image
 COPY . .
 
-# Expose port 3000 to the outside once the container has launched
-EXPOSE 3000
-EXPOSE 6831
-# Define the command to run the app (use the command that starts your app)
+# Expose ports for your app, Jaeger, and TChannel
+EXPOSE 3000 
+EXPOSE 6831/udp 
+EXPOSE 5775/udp 
+EXPOSE 6832/udp 
+EXPOSE 80 
+EXPOSE 4040
+
+# Define the command to run the app
 CMD ["node", "server.js"]
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

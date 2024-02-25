@@ -1,5 +1,4 @@
-# path/filename: ./final_script.py
-
+import json
 import os
 import requests
 import pika
@@ -8,6 +7,7 @@ from jaeger_client import Config
 import logging
 from contextlib import contextmanager
 from logging.config import dictConfig
+from opentracing.propagation import Format
 
 # Configure structured logging
 dictConfig({
@@ -34,7 +34,7 @@ RABBITMQ_HOST = os.getenv('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = int(os.getenv('RABBITMQ_PORT', 5672))
 RABBITMQ_USER = os.getenv('RABBITMQ_USER', 'user')
 RABBITMQ_PASS = os.getenv('RABBITMQ_PASS', 'password')
-NODE_API_URL = os.getenv('NODE_API_URL', 'http://node-app:3000/process')
+NODE_API_URL = os.getenv('NODE_API_URL', 'http://node-app:3000')
 QUEUE_NAME = os.getenv('QUEUE_NAME', 'task_queue')
 
 def initialize_tracer():
@@ -65,14 +65,18 @@ def rabbitmq_connection():
 
 def post_to_node_api(data, tracer, parent_span):
     """Post processed data to Node.js API with distributed tracing."""
-    with tracer.start_active_span('post_to_api', child_of=parent_span) as scope:
+    headers = {"Content-Type": "application/json"}
+    # Inject the current span context into the headers to propagate the trace
+    tracer.inject(parent_span.context, Format.HTTP_HEADERS, headers)
+    
+    with tracer.start_active_span('post_to_node_api', child_of=parent_span) as scope:
         try:
-            response = requests.post(NODE_API_URL, json=data, headers={"Content-Type": "application/json"})
+            response = requests.post(f"{NODE_API_URL}/process", data=json.dumps(data), headers=headers)
             scope.span.set_tag('http.status_code', response.status_code)
-            logging.info(f"Posted to Node.js API, status code: {response.status_code}")
+            logging.info(f"Posted to Node.js API /process, status code: {response.status_code}")
         except requests.exceptions.RequestException as e:
             scope.span.set_tag('http.error', str(e))
-            logging.error(f"Failed to post to Node.js API: {e}")
+            logging.error(f"Failed to post to Node.js API /process: {e}")
 
 def process_message(body, tracer):
     """Process received message and post result to Node.js API."""

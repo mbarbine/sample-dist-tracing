@@ -7,9 +7,9 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "amqplib": "^0.10.3",
+    "amqplib": "^0.10.1",
     "express": "^4.17.1",
     "jaeger-client": "^3.18.1",
-    "opentracing": "^0.14.4"
+    "opentracing": "^0.14.0"
   }
 }
