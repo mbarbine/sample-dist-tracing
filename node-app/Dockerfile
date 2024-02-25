@@ -1,5 +1,5 @@
 # Use the official Node.js 18 as a parent image
-FROM node:latest
+FROM node:18.12.0
 
 # Set the working directory in the container
 WORKDIR /usr/src/app
@@ -12,9 +12,6 @@ COPY package*.json ./
 
 # Clean up npm cache and rebuild
 RUN npm cache clean --force
-
-# Install npm globally to ensure the latest version is available
-RUN npm install -g npm@latest
 
 # Install project dependencies
 RUN npm install

@@ -1,15 +1,19 @@
 {
-  "name": "nodejs-api",
+  "name": "NodeJS Express API",
   "version": "1.0.0",
-  "description": "A Node.js API with Jaeger Tracing",
+  "description": "nodejs api",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
+  "keywords": [],
+  "author": "Michael Barbine",
+  "license": "ISC",
   "dependencies": {
-    "amqplib": "^0.10.1",
     "express": "^4.17.1",
-    "jaeger-client": "^3.18.1",
-    "opentracing": "^0.14.0"
+    "body-parser": "^1.19.0",
+    "jaeger-client": "^3.19.0",
+    "amqplib": "^0.9.1",
+    "thrift": "^0.14.1"
   }
 }
