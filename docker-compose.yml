@@ -2,19 +2,19 @@ version: '3.8'
 
 services:
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.2
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.1
     environment:
       - discovery.type=single-node
       # Example environment variables for hypothetical advanced configurations
-      # - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      # - "xpack.security.enabled=true"
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "xpack.security.enabled=false"
     volumes:
       - elasticsearch-data:/usr/share/elasticsearch/data
     ports:
       - "9200:9200"
 
   kibana:
-    image: docker.elastic.co/kibana/kibana:7.17.2
+    image: docker.elastic.co/kibana/kibana:8.12.1
     depends_on:
       - elasticsearch
     ports:
@@ -108,13 +108,44 @@ services:
     depends_on:
       - elasticsearch
       - kibana
+  netdata:
+    image: netdata/netdata:stable
+    container_name: netdata
+    pid: host
+    network_mode: host
+    restart: unless-stopped
+    cap_add:
+      - SYS_PTRACE
+      - SYS_ADMIN
+    security_opt:
+      - apparmor:unconfined
+    volumes:
+      - netdataconfig:/etc/netdata
+      - netdatalib:/var/lib/netdata
+      - netdatacache:/var/cache/netdata
+      - /etc/passwd:/host/etc/passwd:ro
+      - /etc/group:/host/etc/group:ro
+      - /etc/localtime:/etc/localtime:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /etc/os-release:/host/etc/os-release:ro
+      - /var/log:/host/var/log:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    environment:
+      - NETDATA_CLAIM_TOKEN=yn8kroQrj0GenJA7YK_qTtES6CEewkwdr7xA76B7zoK6LRb8a9FrKtHsRr6fhHowHXfflQFWcmESNZb3NMLpY4BRh_OcoAaoldXZ_rvVHzPOEd_8wKeOIce8naGsxpVEqgBuDSw
+      - NETDATA_CLAIM_URL=https://app.netdata.cloud
+      - NETDATA_CLAIM_ROOMS=5d892dcf-7e43-4586-8dd0-efbc1f4c95bd
 
 volumes:
   rabbitmq-data:
   elasticsearch-data:
   metricbeat-data:
   filebeat-data:
+  netdataconfig:
+  netdatalib:
+  netdatacache:
 
 networks:
   elastic:
     driver: bridge
+

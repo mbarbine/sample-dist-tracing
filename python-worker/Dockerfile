@@ -8,12 +8,13 @@ WORKDIR /usr/src/app
 COPY requirements.txt ./
 
 # Install any needed dependencies specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip3 install --no-cache-dir -r requirements.txt
 
 # Expose ports for services on the container 
 EXPOSE 6730 
 EXPOSE 5682
 EXPOSE 3000 
+EXPOSE 80 
 
 # Copy the rest of the application code into the container
 COPY . .

@@ -6,7 +6,6 @@ from jaeger_client import Config
 import logging
 from contextlib import contextmanager
 from logging.config import dictConfig
-from opentracing_instrumentation.request_context import get_current_span, span_in_contex
 
 # Configure structured logging
 dictConfig({
